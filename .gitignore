@@ -1,0 +1,19 @@
+mobile/.DS_Store
+mobile/.dart_tool/
+
+mobile/.packages
+mobile/.pub/
+
+mobile/build/
+
+mobile/.flutter-plugins
+
+backend/.bundle
+
+# Ignore all logfiles and tempfiles.
+backend/log/*
+backend/tmp/*
+!backend/log/.keep
+!backend/tmp/.keep
+
+backend/.byebug_history
