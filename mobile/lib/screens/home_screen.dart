@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/user_service.dart';
 import '../models/user.dart';
+import '../utils/network_image_retry.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -12,7 +13,9 @@ class _HomeState extends State<HomeScreen> {
   Map _paramGet = {"offset": 0, "limit": 9, "user_name": ""};
   ScrollController scrollController = new ScrollController();
   TextEditingController textController = new TextEditingController();
+  FocusNode textFocusNode = new FocusNode();
   bool _isPerformingRequest = false;
+  bool _isSearchingUsername = false;
 
   @override
   void initState() {
@@ -48,6 +51,18 @@ class _HomeState extends State<HomeScreen> {
       _users.addAll(users);
       _isPerformingRequest = false;
     });
+  }
+
+  void _doFindUserByUsername() {
+    _resetSearch();
+    setState(() {
+      _paramGet["user_name"] = textController.text;
+      _isSearchingUsername = true;
+    });
+
+    _doFindUsers();
+    textController.clear();
+    textFocusNode.unfocus();
   }
 
   void _doDeleteUser(User user, context) {
@@ -94,7 +109,9 @@ class _HomeState extends State<HomeScreen> {
                 ],
               )),
           child: ListTile(
-              leading: Image.network(user.image_profile),
+              leading: FadeInImage(
+                  image: NetworkImageWithRetry(user.image_profile),
+                  placeholder: AssetImage("images/user.png")),
               title: Text(user.name + " " + user.surname),
               subtitle: Text(user.address),
               trailing: Icon(Icons.remove_circle)));
@@ -106,6 +123,54 @@ class _HomeState extends State<HomeScreen> {
       _paramGet["offset"] = 0;
       _users = [];
     });
+  }
+
+  Widget _buildNotifier() {
+    return Container(
+        color: Colors.white,
+        padding: EdgeInsets.only(bottom: 8.0),
+        child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Container(
+                color: Colors.blueAccent,
+                padding: EdgeInsets.only(left: 16.0, bottom: 16.0, right: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: <Widget>[
+                    Row(
+                      children: <Widget>[
+                        Expanded(
+                          flex: 1,
+                          child: Text(
+                              "Berikut hasil pencarian dari ${_paramGet["username"]}",
+                              style: TextStyle(color: Colors.white)),
+                        ),
+                        IconButton(
+                            icon: Icon(Icons.clear),
+                            color: Colors.white,
+                            onPressed: () {
+                              debugPrint("delete");
+                            })
+                      ],
+                    ),
+                    RaisedButton(
+                        child: Text("Kembali ke awal"),
+                        color: Colors.amberAccent,
+                        onPressed: () {
+                          _resetSearch();
+                          setState(() {
+                            _paramGet["user_name"] = "";
+                            _isSearchingUsername = false;
+                          });
+
+                          _doFindUsers();
+                        })
+                  ],
+                ),
+              )
+            ]));
   }
 
   @override
@@ -122,36 +187,37 @@ class _HomeState extends State<HomeScreen> {
                   child: Container(
                       color: Colors.white,
                       padding: EdgeInsets.all(8.0),
-                      child: Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: <Widget>[
-                          Flexible(
-                              flex: 1,
-                              child: TextField(
-                                  controller: textController,
-                                  decoration: InputDecoration(
-                                      hintText: 'Masukkan nama user',
-                                      border: InputBorder.none))),
-                          Flexible(
-                              flex: 0,
-                              child: Container(
-                                  margin: EdgeInsets.only(left: 16.0),
-                                  child: SizedBox(
-                                      width: 55.0,
-                                      child: RaisedButton(
-                                          padding: EdgeInsets.all(2.0),
-                                          child: Icon(Icons.search,
-                                              color: Colors.white),
-                                          color: Colors.blueAccent,
-                                          onPressed: () {
-                                            _resetSearch();
-                                            setState(() {
-                                              _paramGet["user_name"] =
-                                                  textController.text;
-                                            });
-
-                                            _doFindUsers();
-                                            textController.clear();
-                                          }))))
+                          _isSearchingUsername
+                              ? _buildNotifier()
+                              : SizedBox(width: 0.0),
+                          Row(
+                            children: <Widget>[
+                              Flexible(
+                                  flex: 1,
+                                  child: TextField(
+                                      controller: textController,
+                                      focusNode: textFocusNode,
+                                      decoration: InputDecoration(
+                                          hintText: 'Masukkan nama user',
+                                          border: InputBorder.none))),
+                              Flexible(
+                                  flex: 0,
+                                  child: Container(
+                                      margin: EdgeInsets.only(left: 16.0),
+                                      child: SizedBox(
+                                          width: 55.0,
+                                          child: RaisedButton(
+                                              padding: EdgeInsets.all(2.0),
+                                              child: Icon(Icons.search,
+                                                  color: Colors.white),
+                                              color: Colors.blueAccent,
+                                              onPressed:
+                                                  _doFindUserByUsername))))
+                            ],
+                          )
                         ],
                       ))),
             ),

@@ -6,13 +6,13 @@
     "configurations": [
         {
             "name": "development",
-            "program": "bin/main_dev.dart",
+            "program": "mobile/lib/main_dev.dart",
             "request": "launch",
             "type": "dart"
         },
         {
             "name": "production",
-            "program": "bin/main_prod.dart",
+            "program": "mobile/lib/main_prod.dart",
             "request": "launch",
             "type": "dart"
         }
