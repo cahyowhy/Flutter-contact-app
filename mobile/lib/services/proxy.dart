@@ -11,13 +11,27 @@ class ProxyService {
   String url = env.baseUrl;
   Method method;
 
+  Map normalizeParam(Map param) {
+    Map cloneParam = new Map<dynamic,dynamic>.from(param);
+
+    param.forEach((key, value) {
+      if (value is String) {
+        if (value.isEmpty) cloneParam.remove(key);
+      } else if (value is int) {
+        if (value == 0) cloneParam.remove(key);
+      }
+    });
+
+    return cloneParam;
+  }
+
   Future<Map> find(final param) {
     String url = this.url;
 
     if (param is Map) {
       int index = 0;
 
-      param.forEach((key, value) {
+      normalizeParam(param).forEach((key, value) {
         url += "${index == 0 ? '?' : '&'}${key.toString()}=${value.toString()}";
         index += 1;
       });

@@ -9,35 +9,44 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeState extends State<HomeScreen> {
   List<User> _users = [];
-  Map _paramGet = {"offset": 0, "limit": 9};
-  ScrollController scrollController;
+  Map _paramGet = {"offset": 0, "limit": 9, "user_name": ""};
+  ScrollController scrollController = new ScrollController();
+  TextEditingController textController = new TextEditingController();
+  bool _isPerformingRequest = false;
 
   @override
   void initState() {
     super.initState();
     _doFindUsers();
-    scrollController.addListener(_scrollListener);
+
+    scrollController.addListener(() {
+      if (scrollController.position.pixels ==
+          scrollController.position.maxScrollExtent) {
+        setState(() {
+          _paramGet["offset"] = _paramGet["limit"] + _paramGet["offset"];
+        });
+
+        _doFindUsers();
+      }
+    });
   }
 
   @override
   void dispose() {
     super.dispose();
-    scrollController.removeListener(_scrollListener);
     scrollController.dispose();
   }
 
-  void _scrollListener() {
-    debugPrint(scrollController.position.extentAfter.toString());
-    if (scrollController.position.extentAfter < 500) {
-      debugPrint('check');
-    }
-  }
+  void _doFindUsers() async {
+    setState(() {
+      _isPerformingRequest = true;
+    });
 
-  void _doFindUsers() {
-    UserService.instance.fetchAll(_paramGet).then((List<User> users) {
-      setState(() {
-        _users = users;
-      });
+    List<User> users = await UserService.instance.fetchAll(_paramGet);
+
+    setState(() {
+      _users.addAll(users);
+      _isPerformingRequest = false;
     });
   }
 
@@ -50,11 +59,21 @@ class _HomeState extends State<HomeScreen> {
     });
   }
 
-  Widget _buildListItem(User user, int index) {
+  Widget _buildLoadIndicator() {
+    return Padding(
+      padding: EdgeInsets.all(16.0),
+      child: Center(
+          child: Opacity(
+        opacity: _isPerformingRequest ? 1.0 : 0.0,
+        child: CircularProgressIndicator(),
+      )),
+    );
+  }
 
+  Widget _buildListItem(User user, int index) {
     return Builder(builder: (BuildContext context) {
       return Dismissible(
-          key: Key("list-" + index.toString()),
+          key: Key("list-" + user.name + user.id.toString()),
           direction: DismissDirection.endToStart,
           onDismissed: (DismissDirection dismissDirection) {
             setState(() {
@@ -82,6 +101,13 @@ class _HomeState extends State<HomeScreen> {
     });
   }
 
+  void _resetSearch() {
+    setState(() {
+      _paramGet["offset"] = 0;
+      _users = [];
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -101,6 +127,7 @@ class _HomeState extends State<HomeScreen> {
                           Flexible(
                               flex: 1,
                               child: TextField(
+                                  controller: textController,
                                   decoration: InputDecoration(
                                       hintText: 'Masukkan nama user',
                                       border: InputBorder.none))),
@@ -116,7 +143,14 @@ class _HomeState extends State<HomeScreen> {
                                               color: Colors.white),
                                           color: Colors.blueAccent,
                                           onPressed: () {
-                                            print("check");
+                                            _resetSearch();
+                                            setState(() {
+                                              _paramGet["user_name"] =
+                                                  textController.text;
+                                            });
+
+                                            _doFindUsers();
+                                            textController.clear();
                                           }))))
                         ],
                       ))),
@@ -124,10 +158,14 @@ class _HomeState extends State<HomeScreen> {
             Flexible(
                 flex: 1,
                 child: Container(
-                    padding: EdgeInsets.symmetric(vertical: 16.0),
+                    padding: EdgeInsets.only(top: 16.0),
                     child: ListView(
                       controller: scrollController,
-                      children: List.generate(_users.length, (index) {
+                      children: List.generate(_users.length + 1, (index) {
+                        if (index == _users.length) {
+                          return _buildLoadIndicator();
+                        }
+
                         return _buildListItem(_users[index], index);
                       }),
                     )))
