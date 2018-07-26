@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
-import '../services/user_service.dart';
-import '../models/user.dart';
 import '../utils/network_image_retry.dart';
+
+import './user_screen.dart';
+import '../components/notification.dart';
+
+import '../services/user_service.dart';
+
+import '../models/user.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -16,6 +21,7 @@ class _HomeState extends State<HomeScreen> {
   FocusNode textFocusNode = new FocusNode();
   bool _isPerformingRequest = false;
   bool _isSearchingUsername = false;
+  String _username = "";
 
   @override
   void initState() {
@@ -57,6 +63,7 @@ class _HomeState extends State<HomeScreen> {
     _resetSearch();
     setState(() {
       _paramGet["user_name"] = textController.text;
+      _username = textController.text;
       _isSearchingUsername = true;
     });
 
@@ -109,6 +116,13 @@ class _HomeState extends State<HomeScreen> {
                 ],
               )),
           child: ListTile(
+              onTap: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (BuildContext context) =>
+                            new UserScreen(user: user)));
+              },
               leading: FadeInImage(
                   image: NetworkImageWithRetry(user.image_profile),
                   placeholder: AssetImage("images/user.png")),
@@ -125,52 +139,15 @@ class _HomeState extends State<HomeScreen> {
     });
   }
 
-  Widget _buildNotifier() {
-    return Container(
-        color: Colors.white,
-        padding: EdgeInsets.only(bottom: 8.0),
-        child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Container(
-                color: Colors.blueAccent,
-                padding: EdgeInsets.only(left: 16.0, bottom: 16.0, right: 16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: <Widget>[
-                    Row(
-                      children: <Widget>[
-                        Expanded(
-                          flex: 1,
-                          child: Text(
-                              "Berikut hasil pencarian dari ${_paramGet["username"]}",
-                              style: TextStyle(color: Colors.white)),
-                        ),
-                        IconButton(
-                            icon: Icon(Icons.clear),
-                            color: Colors.white,
-                            onPressed: () {
-                              debugPrint("delete");
-                            })
-                      ],
-                    ),
-                    RaisedButton(
-                        child: Text("Kembali ke awal"),
-                        color: Colors.amberAccent,
-                        onPressed: () {
-                          _resetSearch();
-                          setState(() {
-                            _paramGet["user_name"] = "";
-                            _isSearchingUsername = false;
-                          });
+  void _onBackResult() {
+    _resetSearch();
+    setState(() {
+      _paramGet["user_name"] = "";
+      _username = "";
+      _isSearchingUsername = false;
+    });
 
-                          _doFindUsers();
-                        })
-                  ],
-                ),
-              )
-            ]));
+    _doFindUsers();
   }
 
   @override
@@ -191,8 +168,11 @@ class _HomeState extends State<HomeScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: <Widget>[
                           _isSearchingUsername
-                              ? _buildNotifier()
-                              : SizedBox(width: 0.0),
+                              ? NotificationComponent(
+                                  title:
+                                      "Berikut hasil pencarian dari ${_username}",
+                                  callback: _onBackResult)
+                              : SizedBox(width: 0.0, height: 0.0),
                           Row(
                             children: <Widget>[
                               Flexible(
