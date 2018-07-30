@@ -39,6 +39,7 @@ class ProxyService {
       url += "${param.toString()}";
     }
 
+    print(url);
     return this._request(Method.get, url).then((http.Response response) {
       return json.decode(response.body);
     });

@@ -1,28 +1,27 @@
-import '../models/user.dart';
 import './proxy.dart';
 import 'dart:async';
 import '../config/env.dart';
+
+import '../models/user.dart';
 
 class UserService extends ProxyService implements UserRepository {
   String url = env.baseUrl + "users/";
 
   Future<List<User>> fetchAll(Map param) {
     return this.find(param).then((response) {
-      List<User> users = [];
-      (response['data'] as List).forEach((item) {
-        users.add(new User(item['name'], item['surname'], item['dob'],
-            item['about'], item['image_profile'],
-            id: item['id'], address: item['address']));
-      });
+      List<User> users = (response['data'] as List).map((item) {
+        return User.fromJson(item);
+      }).toList();
 
       return users;
     });
   }
 
   Future<User> fetch(String id) {
-    return this.find(id).then((response) {
-      return new User(response['name'], response['surname'], response['dob'],
-          response['about'], response['image_profile'], address: response['address']);
+    Map param = {"id": id, "offset": 0, "limit": 1};
+
+    return this.find(param).then((responses) {
+      return User.fromJson(responses["data"]);
     });
   }
 
