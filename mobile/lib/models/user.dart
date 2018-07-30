@@ -1,8 +1,9 @@
 import 'dart:async';
 import './contact.dart';
+import 'dart:convert';
 
 class User {
-  int id;
+  int id = 0;
   String name;
   String surname;
   String address;
@@ -20,7 +21,7 @@ class User {
     dob = json["dob"];
     image_profile = json["image_profile"];
     created_at = json["created_at"];
-    
+
     if (json.containsKey("contacts")) {
       contacts = (json['contacts'] as List).map((contact) {
         return Contact.fromJson(contact);
@@ -33,6 +34,27 @@ class User {
 
   String validateName(String name) {
     return name.length < 3 ? 'Isi minimal nama dengan 3 huruf' : null;
+  }
+
+  Map<String, dynamic> toJson({bool useparent = false}) {
+    List contactJson = [];
+    contacts.forEach((item) => contactJson.add(item.toJson()));
+    
+    Map<String, dynamic> json = {
+      "id": id,
+      "name": name,
+      "address": address,
+      "dob": dob,
+      "about": about,
+      "image_profile": image_profile,
+      "contacts": contactJson
+    };
+
+    if (useparent) {
+      json = {"user": json};
+    }
+
+    return json;
   }
 }
 

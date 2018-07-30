@@ -25,7 +25,11 @@ class UserService extends ProxyService implements UserRepository {
     });
   }
 
-  Future<User> update(User user) {}
+  Future<User> update(User user) {
+    return this.put(user.toJson(), user.id).then((response) {
+      return User.fromJson(response);
+    });
+  }
 
   Future<User> store(User user) {}
 

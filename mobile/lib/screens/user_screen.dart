@@ -1,7 +1,10 @@
 import 'package:meta/meta.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../utils/network_image_retry.dart';
+
+import '../components/dialog_user_groups.dart';
 
 import '../services/user_service.dart';
 import '../services/group_service.dart';
@@ -14,7 +17,7 @@ import '../models/user_group.dart';
 import '../models/phone_number.dart';
 
 class UserScreen extends StatefulWidget {
-  User user;
+  final User user;
 
   UserScreen({@required this.user});
 
@@ -73,10 +76,12 @@ class _UserState extends State<UserScreen> {
     });
   }
 
-  void _onSubmitForm() {
+  void _doSaveUser() async {
     if (_formKey.currentState.validate()) {
       _formKey.currentState.save();
     }
+
+    await UserService.instance.update(this._user);
   }
 
   void _doSaveGroup() {
@@ -96,9 +101,7 @@ class _UserState extends State<UserScreen> {
       }
 
       return UserGroupService.instance.save(userGroup);
-    })).then((List response) {
-      print(response);
-    });
+    }));
   }
 
   Widget _buildContactItems(index) {
@@ -196,43 +199,23 @@ class _UserState extends State<UserScreen> {
     ]);
   }
 
-  Widget _buildCheckboxGroups(BuildContext context) {
-    List<Widget> childrens = List.generate(_groups.length, (index) {
-      return CheckboxListTile(
-        title: Text(_groups[index].name),
-        value: _groups[index].checked,
-        onChanged: (bool val) {
-          setState(() {
-            _groups[index].checked = val;
-          });
-        },
-      );
-    });
-
-    childrens.add(Padding(
-        padding: EdgeInsets.only(left: 16.0, right: 16.0, bottom: 16.0),
-        child: RaisedButton(
-          onPressed: () {
-            Navigator.of(context, rootNavigator: true).pop();
-          },
-          color: Colors.blueAccent,
-          textColor: Colors.white,
-          child: Text("Simpan Group"),
-        )));
-
-    return Container(
-        child: Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: childrens,
-    ));
+  _showGroupDialog(BuildContext context) {
+    showDialog(
+        context: context,
+        builder: (BuildContext dialogContext) => DialogUserGroups(
+            groups: _groups,
+            onChecked: _onSetUserGroup,
+            onCloseDialog: () {
+              Navigator.of(context, rootNavigator: true).pop();
+              this._doSaveGroup();
+            }));
   }
 
-  Future<Null> _showGroupDialog(BuildContext context) async {
-    await showDialog(
-        context: context,
-        builder: (BuildContext dialogContext) =>
-            Dialog(child: _buildCheckboxGroups(dialogContext)));
+  void _onSetUserGroup(int index, bool val) {
+    print(index);
+    setState(() {
+      _groups[index].checked = val;
+    });
   }
 
   @override
@@ -266,17 +249,21 @@ class _UserState extends State<UserScreen> {
                               IconButton(
                                   icon: Icon(Icons.message),
                                   onPressed: () {
-                                    debugPrint("check");
+                                    launch("sms:" +
+                                        _user.contacts[0].phone_numbers[0]
+                                            .phone_number);
                                   }),
                               IconButton(
                                   icon: Icon(Icons.call),
                                   onPressed: () {
-                                    debugPrint("check");
+                                    launch("tel:" +
+                                        _user.contacts[0].phone_numbers[0]
+                                            .phone_number);
                                   }),
                               IconButton(
                                   icon: Icon(Icons.group),
                                   onPressed: () async {
-                                    await _showGroupDialog(context);
+                                    _showGroupDialog(context);
                                   })
                             ],
                           )
@@ -340,7 +327,7 @@ class _UserState extends State<UserScreen> {
                               child: RaisedButton(
                                   color: Colors.blueAccent,
                                   textColor: Colors.white,
-                                  onPressed: _onSubmitForm,
+                                  onPressed: _doSaveUser,
                                   child: Text("Simpan kontak ${_user.name}")),
                               padding: EdgeInsets.only(top: 12.0))
                         ],

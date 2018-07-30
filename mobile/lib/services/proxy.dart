@@ -39,7 +39,6 @@ class ProxyService {
       url += "${param.toString()}";
     }
 
-    print(url);
     return this._request(Method.get, url).then((http.Response response) {
       return json.decode(response.body);
     });
@@ -53,8 +52,8 @@ class ProxyService {
     });
   }
 
-  Future<Map> put(final Map body) {
-    String apiUrl = this.url + body['id'];
+  Future<Map> put(final Map body, final int id) {
+    String apiUrl = this.url + id.toString();
 
     return this
         ._request(Method.put, apiUrl, param: body)
@@ -78,11 +77,11 @@ class ProxyService {
         break;
       case Method.put:
         return http.put(url,
-            body: param, headers: {"Content-Type": "application/json"});
+            body: json.encode(param), headers: {"Content-Type": "application/json"});
         break;
       case Method.post:
         return http.post(url,
-            body: param, headers: {"Content-Type": "application/json"});
+            body: json.encode(param), headers: {"Content-Type": "application/json"});
         break;
       default:
         return http.get(url, headers: {"Content-Type": "application/json"});

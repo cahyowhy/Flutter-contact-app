@@ -1,10 +1,12 @@
 import './phone_number.dart';
 
 class Contact {
-  int id;
+  int id = 0;
   String website;
   String email;
   List<PhoneNumber> phone_numbers = [];
+
+  Contact({this.website, this.email, this.phone_numbers});
 
   Contact.fromJson(Map<String, dynamic> json) {
     id = json["id"];
@@ -18,5 +20,13 @@ class Contact {
     }
   }
 
-  Contact({this.website, this.email, this.phone_numbers});
+  Map<String, dynamic> toJson({bool useparent = false}) {
+    Map<String, dynamic> json = {"website": website, "email": email, "id": id};
+
+    if (useparent) {
+      json = {"contact": json};
+    }
+
+    return json;
+  }
 }
